@@ -7,6 +7,7 @@ from app.database import get_db
 from app.db_models import InvestigationDB
 from app.investigation.evidence import collect_evidence
 from app.models import Investigation, InvestigationCreate
+from app.reasoning.classifier import classify_request
 from app.reasoning.engine import diagnose
 
 
@@ -40,24 +41,23 @@ def create_investigation(
     db.commit()
     db.refresh(investigation)
 
-    # Step 2: Collect operational evidence.
-    evidence = collect_evidence(
-    service="payment-api",
-    incident_type="database_connection_exhaustion",
-    log_query="database",
-)
+    # Step 2: Classify the investigation request.
+    classification = classify_request(payload.request)
 
-    # Step 3: Analyze the evidence.
+    # Step 3: Collect operational evidence.
+    evidence = collect_evidence(**classification)
+
+    # Step 4: Analyze the evidence.
     diagnosis = diagnose(evidence)
 
-    # Step 4: Update the investigation with the diagnosis.
+    # Step 5: Update the investigation with the diagnosis.
     investigation.status = "analyzed"
     investigation.severity = diagnosis.severity
 
     db.commit()
     db.refresh(investigation)
 
-    # Step 5: Return the investigation.
+    # Step 6: Return the investigation.
     return Investigation(
         id=investigation.id,
         request=investigation.request,

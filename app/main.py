@@ -1,6 +1,6 @@
 from uuid import uuid4
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -50,17 +50,56 @@ def create_investigation(
     # Step 4: Analyze the evidence.
     diagnosis = diagnose(evidence)
 
-    # Step 5: Update the investigation with the diagnosis.
+    # Step 5: Persist the full diagnosis.
     investigation.status = "analyzed"
     investigation.severity = diagnosis.severity
+    investigation.diagnosis = diagnosis.diagnosis
+    investigation.confidence = diagnosis.confidence
+    investigation.evidence = diagnosis.evidence
+    investigation.recommended_action = diagnosis.recommended_action
+    investigation.requires_human_approval = diagnosis.requires_human_approval
 
     db.commit()
     db.refresh(investigation)
 
-    # Step 6: Return the investigation.
+    # Step 6: Return the complete investigation.
     return Investigation(
         id=investigation.id,
         request=investigation.request,
         status=investigation.status,
         severity=investigation.severity,
+        diagnosis=investigation.diagnosis,
+        confidence=investigation.confidence,
+        evidence=investigation.evidence,
+        recommended_action=investigation.recommended_action,
+        requires_human_approval=investigation.requires_human_approval,
+    )
+@app.get(
+    "/api/v1/ops/investigations/{investigation_id}",
+    response_model=Investigation,
+)
+def get_investigation(
+    investigation_id: str,
+    db: Session = Depends(get_db),
+):
+    investigation = db.get(InvestigationDB, investigation_id)
+
+    if investigation is None:
+        from fastapi import HTTPException
+
+        raise HTTPException(
+            status_code=404,
+            detail="Investigation not found",
+        )
+
+    return Investigation(
+        id=investigation.id,
+        request=investigation.request,
+        status=investigation.status,
+        severity=investigation.severity,
+        diagnosis=investigation.diagnosis,
+        confidence=investigation.confidence,
+        evidence=investigation.evidence,
+        recommended_action=investigation.recommended_action,
+        requires_human_approval=investigation.requires_human_approval,
     )

@@ -31,3 +31,8 @@ class Investigation(BaseModel):
     request: str
     status: InvestigationStatus = InvestigationStatus.CREATED
     severity: Severity | None = None
+    diagnosis: str | None = None
+    confidence: float | None = None
+    evidence: list[str] | None = None
+    recommended_action: str | None = None
+    requires_human_approval: bool | None = None

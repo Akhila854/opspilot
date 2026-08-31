@@ -74,6 +74,9 @@ def create_investigation(
         recommended_action=investigation.recommended_action,
         requires_human_approval=investigation.requires_human_approval,
     )
+
+
+
 @app.get(
     "/api/v1/ops/investigations/{investigation_id}",
     response_model=Investigation,
@@ -85,7 +88,6 @@ def get_investigation(
     investigation = db.get(InvestigationDB, investigation_id)
 
     if investigation is None:
-        from fastapi import HTTPException
 
         raise HTTPException(
             status_code=404,

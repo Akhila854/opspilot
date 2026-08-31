@@ -103,3 +103,31 @@ def get_investigation(
         recommended_action=investigation.recommended_action,
         requires_human_approval=investigation.requires_human_approval,
     )
+
+@app.get(
+    "/api/v1/ops/investigations",
+    response_model=list[Investigation],
+)
+def list_investigations(
+    db: Session = Depends(get_db),
+):
+    investigations = (
+        db.query(InvestigationDB)
+        .order_by(InvestigationDB.id.desc())
+        .all()
+    )
+
+    return [
+        Investigation(
+            id=investigation.id,
+            request=investigation.request,
+            status=investigation.status,
+            severity=investigation.severity,
+            diagnosis=investigation.diagnosis,
+            confidence=investigation.confidence,
+            evidence=investigation.evidence,
+            recommended_action=investigation.recommended_action,
+            requires_human_approval=investigation.requires_human_approval,
+        )
+        for investigation in investigations
+    ]

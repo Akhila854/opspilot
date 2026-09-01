@@ -133,3 +133,42 @@ def list_investigations(
         )
         for investigation in investigations
     ]
+
+@app.post(
+    "/api/v1/ops/investigations/{investigation_id}/approve",
+    response_model=Investigation,
+)
+def approve_investigation(
+    investigation_id: str,
+    db: Session = Depends(get_db),
+):
+    investigation = db.get(InvestigationDB, investigation_id)
+
+    if investigation is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Investigation not found",
+        )
+
+    if not investigation.requires_human_approval:
+        raise HTTPException(
+            status_code=400,
+            detail="Investigation does not require human approval",
+        )
+
+    investigation.status = "approved"
+
+    db.commit()
+    db.refresh(investigation)
+
+    return Investigation(
+        id=investigation.id,
+        request=investigation.request,
+        status=investigation.status,
+        severity=investigation.severity,
+        diagnosis=investigation.diagnosis,
+        confidence=investigation.confidence,
+        evidence=investigation.evidence,
+        recommended_action=investigation.recommended_action,
+        requires_human_approval=investigation.requires_human_approval,
+    )

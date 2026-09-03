@@ -76,7 +76,6 @@ def create_investigation(
     )
 
 
-
 @app.get(
     "/api/v1/ops/investigations/{investigation_id}",
     response_model=Investigation,
@@ -88,7 +87,6 @@ def get_investigation(
     investigation = db.get(InvestigationDB, investigation_id)
 
     if investigation is None:
-
         raise HTTPException(
             status_code=404,
             detail="Investigation not found",
@@ -105,6 +103,7 @@ def get_investigation(
         recommended_action=investigation.recommended_action,
         requires_human_approval=investigation.requires_human_approval,
     )
+
 
 @app.get(
     "/api/v1/ops/investigations",
@@ -134,6 +133,7 @@ def list_investigations(
         for investigation in investigations
     ]
 
+
 @app.post(
     "/api/v1/ops/investigations/{investigation_id}/approve",
     response_model=Investigation,
@@ -148,6 +148,12 @@ def approve_investigation(
         raise HTTPException(
             status_code=404,
             detail="Investigation not found",
+        )
+
+    if investigation.status != "analyzed":
+        raise HTTPException(
+            status_code=400,
+            detail="Investigation must be analyzed before approval",
         )
 
     if not investigation.requires_human_approval:
@@ -172,6 +178,7 @@ def approve_investigation(
         recommended_action=investigation.recommended_action,
         requires_human_approval=investigation.requires_human_approval,
     )
+
 
 @app.post(
     "/api/v1/ops/investigations/{investigation_id}/complete",

@@ -94,3 +94,55 @@ class InvestigationEventDB(Base):
         default=datetime.utcnow,
         nullable=False,
     )
+
+
+class InvestigationActionDB(Base):
+    __tablename__ = "investigation_actions"
+
+    id: Mapped[str] = mapped_column(
+        String(36),
+        primary_key=True,
+    )
+
+    investigation_id: Mapped[str] = mapped_column(
+        String(36),
+        nullable=False,
+    )
+
+    action_type: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+    )
+
+    description: Mapped[str] = mapped_column(
+        String(2000),
+        nullable=False,
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        default="proposed",
+    )
+
+    requires_approval: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+    )
+
+    result: Mapped[str | None] = mapped_column(
+        String(2000),
+        nullable=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False,
+    )
+
+    executed_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True,
+    )

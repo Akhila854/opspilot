@@ -37,3 +37,21 @@ class Investigation(BaseModel):
     evidence: list[str] | None = None
     recommended_action: str | None = None
     requires_human_approval: bool | None = None
+
+class ActionStatus(str, Enum):
+    PROPOSED = "proposed"
+    APPROVED = "approved"
+    EXECUTED = "executed"
+    FAILED = "failed"
+
+
+class InvestigationAction(BaseModel):
+    id: str
+    investigation_id: str
+    action_type: str
+    description: str
+    status: ActionStatus = ActionStatus.PROPOSED
+    requires_approval: bool = True
+    result: str | None = None
+    created_at: str | None = None
+    executed_at: str | None = None

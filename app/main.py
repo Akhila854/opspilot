@@ -5,12 +5,15 @@ from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import Base, engine, get_db
-from app.db_models import InvestigationActionDB, InvestigationDB
+from app.db_models import (
+    InvestigationActionDB,
+    InvestigationDB,
+    InvestigationEventDB,
+)
 from app.investigation.evidence import collect_evidence
 from app.models import Investigation, InvestigationAction, InvestigationCreate
 from app.reasoning.classifier import classify_request
 from app.reasoning.engine import diagnose
-
 
 
 app = FastAPI(
@@ -20,6 +23,27 @@ app = FastAPI(
 )
 
 Base.metadata.create_all(bind=engine)
+
+
+def record_investigation_event(
+    db: Session,
+    investigation_id: str,
+    event_type: str,
+    from_status: str | None = None,
+    to_status: str | None = None,
+    message: str | None = None,
+):
+    event = InvestigationEventDB(
+        id=str(uuid4()),
+        investigation_id=investigation_id,
+        event_type=event_type,
+        from_status=from_status,
+        to_status=to_status,
+        message=message,
+    )
+
+    db.add(event)
+    db.commit()
 
 
 @app.get("/health")
@@ -65,6 +89,15 @@ def create_investigation(
 
     db.commit()
     db.refresh(investigation)
+
+    record_investigation_event(
+        db=db,
+        investigation_id=investigation.id,
+        event_type="investigation_created",
+        from_status=None,
+        to_status="analyzed",
+        message="Investigation created and initial diagnosis completed",
+    )
 
     # Step 6: Return the complete investigation.
     return Investigation(
@@ -166,10 +199,20 @@ def approve_investigation(
             detail="Investigation does not require human approval",
         )
 
+    old_status = investigation.status
     investigation.status = "approved"
 
     db.commit()
     db.refresh(investigation)
+
+    record_investigation_event(
+        db=db,
+        investigation_id=investigation.id,
+        event_type="investigation_approved",
+        from_status=old_status,
+        to_status=investigation.status,
+        message="Investigation approved",
+    )
 
     return Investigation(
         id=investigation.id,
@@ -206,10 +249,20 @@ def complete_investigation(
             detail="Investigation must be approved before completion",
         )
 
+    old_status = investigation.status
     investigation.status = "completed"
 
     db.commit()
     db.refresh(investigation)
+
+    record_investigation_event(
+        db=db,
+        investigation_id=investigation.id,
+        event_type="investigation_completed",
+        from_status=old_status,
+        to_status=investigation.status,
+        message="Investigation completed",
+    )
 
     return Investigation(
         id=investigation.id,
@@ -222,6 +275,7 @@ def complete_investigation(
         recommended_action=investigation.recommended_action,
         requires_human_approval=investigation.requires_human_approval,
     )
+
 
 @app.post(
     "/api/v1/ops/investigations/{investigation_id}/actions",
@@ -283,6 +337,7 @@ def create_action(
             else None
         ),
     )
+
 
 @app.post(
     "/api/v1/ops/investigations/{investigation_id}/actions/{action_id}/approve",
@@ -352,6 +407,7 @@ def approve_action(
         ),
     )
 
+
 @app.post(
     "/api/v1/ops/investigations/{investigation_id}/actions/{action_id}/execute",
     response_model=InvestigationAction,
@@ -420,6 +476,7 @@ def execute_action(
         ),
     )
 
+
 @app.get(
     "/api/v1/ops/investigations/{investigation_id}/actions",
     response_model=list[InvestigationAction],
@@ -466,4 +523,46 @@ def list_actions(
             ),
         )
         for action in actions
+    ]
+
+
+@app.get(
+    "/api/v1/ops/investigations/{investigation_id}/events",
+)
+def list_investigation_events(
+    investigation_id: str,
+    db: Session = Depends(get_db),
+):
+    investigation = db.get(InvestigationDB, investigation_id)
+
+    if investigation is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Investigation not found",
+        )
+
+    events = (
+        db.query(InvestigationEventDB)
+        .filter(
+            InvestigationEventDB.investigation_id == investigation_id
+        )
+        .order_by(InvestigationEventDB.created_at.asc())
+        .all()
+    )
+
+    return [
+        {
+            "id": event.id,
+            "investigation_id": event.investigation_id,
+            "event_type": event.event_type,
+            "from_status": event.from_status,
+            "to_status": event.to_status,
+            "message": event.message,
+            "created_at": (
+                event.created_at.isoformat()
+                if event.created_at
+                else None
+            ),
+        }
+        for event in events
     ]

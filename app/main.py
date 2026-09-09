@@ -318,6 +318,15 @@ def create_action(
     db.commit()
     db.refresh(action)
 
+    record_investigation_event(
+        db=db,
+        investigation_id=investigation.id,
+        event_type="action_created",
+        from_status=None,
+        to_status="proposed",
+        message=f"Action created: {action.description}",
+    )
+
     return InvestigationAction(
         id=action.id,
         investigation_id=action.investigation_id,
@@ -338,7 +347,6 @@ def create_action(
         ),
     )
 
-
 @app.post(
     "/api/v1/ops/investigations/{investigation_id}/actions/{action_id}/approve",
     response_model=InvestigationAction,
@@ -349,31 +357,23 @@ def approve_action(
     db: Session = Depends(get_db),
 ):
     investigation = db.get(InvestigationDB, investigation_id)
-
-    if investigation is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Investigation not found",
-        )
+    if not investigation:
+        raise HTTPException(status_code=404, detail="Investigation not found")
 
     action = db.get(InvestigationActionDB, action_id)
-
-    if action is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Action not found",
-        )
+    if not action:
+        raise HTTPException(status_code=404, detail="Action not found")
 
     if action.investigation_id != investigation_id:
         raise HTTPException(
             status_code=400,
-            detail="Action does not belong to this investigation",
+            detail="Action does not belong to investigation",
         )
 
     if action.status != "proposed":
         raise HTTPException(
             status_code=400,
-            detail="Action must be proposed before approval",
+            detail="Only proposed actions can be approved",
         )
 
     if not action.requires_approval:
@@ -383,9 +383,17 @@ def approve_action(
         )
 
     action.status = "approved"
-
     db.commit()
     db.refresh(action)
+
+    record_investigation_event(
+        db=db,
+        investigation_id=investigation.id,
+        event_type="action_approved",
+        from_status="proposed",
+        to_status="approved",
+        message=f"Action approved: {action.description}",
+    )
 
     return InvestigationAction(
         id=action.id,
@@ -447,15 +455,19 @@ def execute_action(
 
     # Simulated execution.
     action.status = "executed"
-    action.result = (
-        "Action executed successfully: "
-        "operational remediation simulated"
-    )
+    action.result = "Action executed successfully: operational remediation simulated"
     action.executed_at = datetime.utcnow()
-
     db.commit()
     db.refresh(action)
 
+    record_investigation_event(
+    db=db,
+    investigation_id=investigation.id,
+    event_type="action_executed",
+    from_status="approved",
+    to_status="executed",
+    message=f"Action executed: {action.description}",
+)
     return InvestigationAction(
         id=action.id,
         investigation_id=action.investigation_id,

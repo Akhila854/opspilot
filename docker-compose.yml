@@ -4,4 +4,6 @@ services:
     container_name: opspilot
     ports:
       - "8000:8000"
+    environment:
+      DATABASE_URL: sqlite:///./opspilot.db
     restart: unless-stopped

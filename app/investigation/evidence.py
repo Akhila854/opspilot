@@ -23,6 +23,7 @@ def collect_evidence(
 
     return {
         "service": service,
+        "incident_type": incident_type,
         "logs": logs,
         "metrics": metrics,
         "service_info": service_info,

@@ -7,8 +7,8 @@ METRICS = {
         "database_connection_limit": 100,
     },
     "user-service": {
-        "error_rate": 0.8,
-        "latency_ms": 180,
+        "error_rate": 8.5,
+        "latency_ms": 850,
         "requests_per_minute": 900,
         "database_connections": 42,
         "database_connection_limit": 100,

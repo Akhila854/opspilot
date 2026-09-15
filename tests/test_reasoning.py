@@ -1,6 +1,7 @@
 from app.reasoning.classifier import classify_request
 from app.investigation.evidence import collect_evidence
 from app.reasoning.engine import diagnose
+from app.reasoning.ai_engine import build_diagnosis_prompt
 
 
 def test_high_api_latency_diagnosis():
@@ -25,3 +26,23 @@ def test_authentication_failure_diagnosis():
     assert diagnosis.severity == "high"
     assert diagnosis.confidence == 0.86
     assert diagnosis.requires_human_approval is True
+
+def test_ai_diagnosis_prompt_contains_operational_evidence():
+    evidence = {
+        "service": "payment-api",
+        "incident_type": "database_connection_exhaustion",
+        "logs": ["Database connection timeout", "Connection pool exhausted"],
+        "metrics": {
+            "error_rate": 34.0,
+            "latency_ms": 2400,
+            "db_connections": "100/100",
+        },
+    }
+
+    prompt = build_diagnosis_prompt(evidence)
+
+    assert "payment-api" in prompt
+    assert "database_connection_exhaustion" in prompt
+    assert "Connection pool exhausted" in prompt
+    assert "Analyze ONLY the supplied operational evidence" in prompt
+    assert "Do not invent facts or evidence" in prompt

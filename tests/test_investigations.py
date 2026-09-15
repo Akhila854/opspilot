@@ -185,3 +185,22 @@ def test_list_investigations_pagination():
     assert len(second_results) == 1
 
     assert first_results[0]["id"] != second_results[0]["id"]
+
+def test_list_investigations_rejects_invalid_pagination():
+    response = client.get(
+        "/api/v1/ops/investigations?limit=0"
+    )
+
+    assert response.status_code == 422
+
+    response = client.get(
+        "/api/v1/ops/investigations?limit=101"
+    )
+
+    assert response.status_code == 422
+
+    response = client.get(
+        "/api/v1/ops/investigations?offset=-1"
+    )
+
+    assert response.status_code == 422

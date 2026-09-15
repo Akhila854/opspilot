@@ -1,11 +1,16 @@
-services:
+﻿services:
   opspilot:
     build: .
     container_name: opspilot
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: sqlite:///./opspilot.db
+      DATABASE_URL: sqlite:////app/data/opspilot.db
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.6-flash}
+    volumes:
+      - opspilot_data:/app/data
     restart: unless-stopped
+
+volumes:
+  opspilot_data:

@@ -154,13 +154,27 @@ def get_investigation(
     response_model=list[Investigation],
 )
 def list_investigations(
+    status: str | None = None,
+    severity: str | None = None,
+    limit: int = 20,
+    offset: int = 0,
     db: Session = Depends(get_db),
 ):
+    query = db.query(InvestigationDB)
+
+    if status:
+        query = query.filter(InvestigationDB.status == status)
+
+    if severity:
+        query = query.filter(InvestigationDB.severity == severity)
+
     investigations = (
-        db.query(InvestigationDB)
-        .order_by(InvestigationDB.id.desc())
-        .all()
-    )
+    query
+    .order_by(InvestigationDB.id.desc())
+    .offset(offset)
+    .limit(limit)
+    .all()
+)
 
     return [
         Investigation(

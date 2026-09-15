@@ -136,3 +136,52 @@ def test_action_audit_trail(mock_gemini):
         "action_approved",
         "action_executed",
     ]
+
+def test_list_investigations_filters():
+    client.post(
+        "/api/v1/ops/investigations",
+        json={
+            "request": "Database connection pool is exhausted and requests are timing out"
+        },
+    )
+
+    response = client.get(
+        "/api/v1/ops/investigations?severity=critical"
+    )
+
+    assert response.status_code == 200
+
+    investigations = response.json()
+
+    assert len(investigations) > 0
+    assert all(
+        investigation["severity"] == "critical"
+        for investigation in investigations
+    )
+
+def test_list_investigations_pagination():
+    client.post(
+        "/api/v1/ops/investigations",
+        json={
+            "request": "Database connection pool is exhausted and requests are timing out"
+        },
+    )
+
+    first_page = client.get(
+        "/api/v1/ops/investigations?limit=1&offset=0"
+    )
+
+    second_page = client.get(
+        "/api/v1/ops/investigations?limit=1&offset=1"
+    )
+
+    assert first_page.status_code == 200
+    assert second_page.status_code == 200
+
+    first_results = first_page.json()
+    second_results = second_page.json()
+
+    assert len(first_results) == 1
+    assert len(second_results) == 1
+
+    assert first_results[0]["id"] != second_results[0]["id"]

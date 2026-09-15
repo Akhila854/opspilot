@@ -74,7 +74,14 @@ def create_investigation(
     classification = classify_request(payload.request)
 
     # Step 3: Collect operational evidence.
-    evidence = collect_evidence(**classification)
+    try:
+        evidence = collect_evidence(**classification)
+    except Exception as exc:
+        print(f"Evidence collection failed: {exc}")
+        raise HTTPException(
+             status_code=503,
+            detail="Operational evidence is temporarily unavailable",
+    )
 
     # Step 4: Analyze the evidence with AI, falling back to deterministic reasoning.
     try:

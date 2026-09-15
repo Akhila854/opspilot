@@ -204,3 +204,21 @@ def test_list_investigations_rejects_invalid_pagination():
     )
 
     assert response.status_code == 422
+
+
+def test_create_investigation_returns_503_when_evidence_collection_fails():
+    with patch(
+        "app.main.collect_evidence",
+        side_effect=RuntimeError("evidence system unavailable"),
+    ):
+        response = client.post(
+            "/api/v1/ops/investigations",
+            json={
+                "request": "Database connection pool is exhausted and requests are timing out"
+            },
+        )
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == (
+        "Operational evidence is temporarily unavailable"
+    )

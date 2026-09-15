@@ -2,6 +2,11 @@ from app.reasoning.classifier import classify_request
 from app.investigation.evidence import collect_evidence
 from app.reasoning.engine import diagnose
 from app.reasoning.ai_engine import build_diagnosis_prompt
+from app.tools.metrics import reset_metrics
+
+
+def setup_function():
+    reset_metrics()
 
 
 def test_high_api_latency_diagnosis():

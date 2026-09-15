@@ -15,6 +15,7 @@ from app.models import Investigation, InvestigationAction, InvestigationCreate
 from app.reasoning.classifier import classify_request
 from app.reasoning.engine import diagnose
 from app.reasoning.ai_engine import diagnose_with_ai
+from app.tools.metrics import get_metrics, simulate_remediation
 
 
 app = FastAPI(
@@ -321,7 +322,7 @@ def create_action(
             detail="Investigation not found",
         )
 
-    if investigation.status != "analyzed":
+    if investigation.status != "approved":
         raise HTTPException(
             status_code=400,
             detail="Investigation must be analyzed before creating an action",
@@ -482,8 +483,24 @@ def execute_action(
         )
 
     # Simulated execution.
+    classification = classify_request(investigation.request)
+
+    try:
+        remediation_metrics = simulate_remediation(
+          service=classification["service"],
+          incident_type=classification["incident_type"],
+    )
+    except ValueError as exc:
+        raise HTTPException(
+           status_code=400,
+           detail=str(exc),
+    )
+
     action.status = "executed"
-    action.result = "Action executed successfully: operational remediation simulated"
+    action.result = (
+         "Action executed successfully: operational remediation simulated. "
+         f"Post-remediation metrics: {remediation_metrics}"
+)
     action.executed_at = datetime.utcnow()
     db.commit()
     db.refresh(action)
@@ -608,5 +625,80 @@ def list_investigation_events(
     ]
 
 
+@app.post("/api/v1/ops/investigations/{investigation_id}/actions/{action_id}/verify")
+def verify_action(
+    investigation_id: str,
+    action_id: str,
+    db: Session = Depends(get_db),
+):
+    investigation = db.get(InvestigationDB, investigation_id)
 
+    if not investigation:
+        raise HTTPException(
+            status_code=404,
+            detail="Investigation not found",
+        )
+
+    action = db.get(InvestigationActionDB, action_id)
+
+    if not action or action.investigation_id != investigation_id:
+        raise HTTPException(
+            status_code=404,
+            detail="Action not found",
+        )
+
+    if action.status != "executed":
+        raise HTTPException(
+            status_code=400,
+            detail="Action must be executed before verification",
+        )
+
+    classification = classify_request(investigation.request)
+    metrics = get_metrics(classification["service"])
+    incident_type = classification["incident_type"]
+
+    recovered = False
+
+    if incident_type == "database_connection_exhaustion":
+        recovered = (
+            metrics.get("database_connections", 0)
+            < metrics.get("database_connection_limit", 0)
+            and metrics.get("error_rate", 100) < 5
+            and metrics.get("latency_ms", 99999) < 1000
+        )
+
+    elif incident_type == "high_api_latency":
+        recovered = metrics.get("latency_ms", 99999) < 1000
+
+    elif incident_type == "authentication_failure":
+        recovered = metrics.get("error_rate", 100) < 5
+
+    if recovered:
+        investigation.status = "completed"
+        event_type = "action_verified"
+        message = "Remediation verified successfully"
+    else:
+        investigation.status = "failed"
+        event_type = "action_verification_failed"
+        message = "Remediation did not restore healthy operational metrics"
+
+    record_investigation_event(
+        db=db,
+        investigation_id=investigation.id,
+        event_type=event_type,
+        from_status="approved",
+        to_status=investigation.status,
+        message=message,
+    )
+
+    db.commit()
+
+    return {
+        "investigation_id": investigation.id,
+        "action_id": action.id,
+        "status": investigation.status,
+        "recovered": recovered,
+        "metrics": metrics,
+        "message": message,
+    }
 

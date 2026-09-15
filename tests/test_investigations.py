@@ -62,6 +62,14 @@ def test_investigation_action_workflow(mock_gemini):
     investigation = response.json()
     investigation_id = investigation["id"]
 
+    approve_investigation_response = client.post(
+        f"/api/v1/ops/investigations/{investigation_id}/approve"
+    )
+
+    assert approve_investigation_response.status_code == 200
+    assert approve_investigation_response.json()["status"] == "approved"
+
+
     action_response = client.post(
         f"/api/v1/ops/investigations/{investigation_id}/actions"
     )
@@ -105,6 +113,13 @@ def test_action_audit_trail(mock_gemini):
 
     investigation_id = response.json()["id"]
 
+    approve_investigation_response = client.post(
+        f"/api/v1/ops/investigations/{investigation_id}/approve"
+    )
+
+    assert approve_investigation_response.status_code == 200
+    assert approve_investigation_response.json()["status"] == "approved"
+
     action_response = client.post(
         f"/api/v1/ops/investigations/{investigation_id}/actions"
     )
@@ -131,10 +146,11 @@ def test_action_audit_trail(mock_gemini):
     ]
 
     assert event_types == [
-        "investigation_created",
-        "action_created",
-        "action_approved",
-        "action_executed",
+    "investigation_created",
+    "investigation_approved",
+    "action_created",
+    "action_approved",
+    "action_executed",
     ]
 
 def test_list_investigations_filters():

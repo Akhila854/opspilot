@@ -6,4 +6,6 @@ services:
       - "8000:8000"
     environment:
       DATABASE_URL: sqlite:///./opspilot.db
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.6-flash}
     restart: unless-stopped

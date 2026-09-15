@@ -14,6 +14,7 @@ from app.investigation.evidence import collect_evidence
 from app.models import Investigation, InvestigationAction, InvestigationCreate
 from app.reasoning.classifier import classify_request
 from app.reasoning.engine import diagnose
+from app.reasoning.ai_engine import diagnose_with_ai
 
 
 app = FastAPI(
@@ -75,8 +76,14 @@ def create_investigation(
     # Step 3: Collect operational evidence.
     evidence = collect_evidence(**classification)
 
-    # Step 4: Analyze the evidence.
-    diagnosis = diagnose(evidence)
+    # Step 4: Analyze the evidence with AI, falling back to deterministic reasoning.
+    try:
+        diagnosis = diagnose_with_ai(evidence)
+        reasoning_provider = "gemini"
+    except Exception as exc:
+        print(f"Gemini reasoning unavailable, using deterministic fallback: {exc}")
+        diagnosis = diagnose(evidence)
+        reasoning_provider = "deterministic_fallback"
 
     # Step 5: Persist the full diagnosis.
     investigation.status = "analyzed"
@@ -96,7 +103,7 @@ def create_investigation(
         event_type="investigation_created",
         from_status=None,
         to_status="analyzed",
-        message="Investigation created and initial diagnosis completed",
+        message=f"Investigation created and initial diagnosis completed using {reasoning_provider}",
     )
 
     # Step 6: Return the complete investigation.
@@ -578,3 +585,7 @@ def list_investigation_events(
         }
         for event in events
     ]
+
+
+
+

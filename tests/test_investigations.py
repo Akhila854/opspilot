@@ -1,9 +1,23 @@
+from unittest.mock import patch
+
+from app.reasoning.schemas import Diagnosis
+
 from fastapi.testclient import TestClient
 
 from app.main import app
 
 
 client = TestClient(app)
+
+def mock_gemini_diagnosis():
+    return Diagnosis(
+        diagnosis="Database connection pool exhaustion",
+        severity="critical",
+        confidence=0.94,
+        evidence=["Database connections are at 100/100"],
+        recommended_action="Investigate connection leaks and verify PostgreSQL health",
+        requires_human_approval=True,
+    )
 
 
 def test_health():
@@ -13,7 +27,8 @@ def test_health():
     assert response.json() == {"status": "healthy"}
 
 
-def test_create_investigation():
+@patch("app.main.diagnose_with_ai", side_effect=mock_gemini_diagnosis)
+def test_create_investigation(mock_gemini):
     response = client.post(
         "/api/v1/ops/investigations",
         json={
@@ -33,7 +48,8 @@ def test_create_investigation():
     assert len(data["evidence"]) > 0
 
 
-def test_investigation_action_workflow():
+@patch("app.main.diagnose_with_ai", side_effect=mock_gemini_diagnosis)
+def test_investigation_action_workflow(mock_gemini):
     response = client.post(
         "/api/v1/ops/investigations",
         json={
@@ -78,7 +94,8 @@ def test_investigation_action_workflow():
     assert executed_action["executed_at"] is not None
 
 
-def test_action_audit_trail():
+@patch("app.main.diagnose_with_ai", side_effect=mock_gemini_diagnosis)
+def test_action_audit_trail(mock_gemini):
     response = client.post(
         "/api/v1/ops/investigations",
         json={

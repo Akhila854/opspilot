@@ -1,7 +1,9 @@
 from datetime import datetime
 from uuid import uuid4
 
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from app.database import Base, engine, get_db
@@ -18,6 +20,7 @@ from app.reasoning.ai_engine import diagnose_with_ai
 from app.tools.metrics import get_metrics, simulate_remediation
 
 
+
 app = FastAPI(
     title="OpsPilot",
     description="AI-powered operations copilot",
@@ -25,6 +28,24 @@ app = FastAPI(
 )
 
 Base.metadata.create_all(bind=engine)
+
+templates = Jinja2Templates(directory="app/templates")
+
+
+@app.get("/", response_class=HTMLResponse)
+def dashboard(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="dashboard.html",
+    )
+
+@app.get("/investigations/{investigation_id}", response_class=HTMLResponse)
+def investigation_page(request: Request, investigation_id: str):
+    return templates.TemplateResponse(
+        request=request,
+        name="investigation.html",
+        context={"investigation_id": investigation_id},
+    )
 
 
 def record_investigation_event(
@@ -189,7 +210,7 @@ def list_investigations(
             id=investigation.id,
             request=investigation.request,
             status=investigation.status,
-            severity=investigation.severity,
+            severity=investigation.severity.lower() if investigation.severity else None,
             diagnosis=investigation.diagnosis,
             confidence=investigation.confidence,
             evidence=investigation.evidence,

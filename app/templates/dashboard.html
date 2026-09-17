@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpsPilot — Operations Dashboard</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+```
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #f5f7fb;
+        color: #172033;
+    }
+
+    header {
+        background: #111827;
+        color: white;
+        padding: 24px 40px;
+    }
+
+    header h1 {
+        margin: 0 0 6px;
+        font-size: 28px;
+    }
+
+    header p {
+        margin: 0;
+        color: #b8c1d1;
+    }
+
+    main {
+        max-width: 1200px;
+        margin: 32px auto;
+        padding: 0 24px;
+    }
+
+    .toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+
+    button {
+        border: 0;
+        border-radius: 8px;
+        padding: 10px 16px;
+        cursor: pointer;
+        font-weight: 600;
+        background: #2563eb;
+        color: white;
+    }
+
+    button:hover {
+        background: #1d4ed8;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 18px;
+    }
+
+    .card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+    }
+
+    .card h3 {
+        margin-top: 0;
+        font-size: 15px;
+        color: #64748b;
+    }
+
+    .value {
+        font-size: 30px;
+        font-weight: 700;
+    }
+
+    .investigation {
+        margin-top: 28px;
+    }
+
+    .investigation-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 14px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+    }
+
+    .row {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .request {
+        font-size: 17px;
+        font-weight: 600;
+        margin-bottom: 14px;
+    }
+
+    .meta {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 999px;
+        background: #e2e8f0;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .critical {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .analyzed {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .approved {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .completed {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .failed {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .diagnosis {
+        margin-top: 16px;
+        padding: 14px;
+        background: #f8fafc;
+        border-radius: 8px;
+    }
+
+    .empty {
+        text-align: center;
+        color: #64748b;
+        padding: 40px;
+    }
+
+    .loading {
+        color: #64748b;
+    }
+
+    @media (max-width: 700px) {
+        header {
+            padding: 20px;
+        }
+
+        main {
+            padding: 0 16px;
+        }
+    }
+</style>
+```
+
+</head>
+
+<body>
+    <header>
+        <h1>OpsPilot</h1>
+        <p>AI-powered incident investigation and controlled remediation</p>
+    </header>
+
+```
+<main>
+    <div class="toolbar">
+        <div>
+            <h2>Operations Overview</h2>
+            <p>Investigation lifecycle and remediation status</p>
+        </div>
+
+        <button onclick="loadInvestigations()">Refresh</button>
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <h3>Total Investigations</h3>
+            <div class="value" id="total">—</div>
+        </div>
+
+        <div class="card">
+            <h3>Analyzed</h3>
+            <div class="value" id="analyzed">—</div>
+        </div>
+
+        <div class="card">
+            <h3>Approved</h3>
+            <div class="value" id="approved">—</div>
+        </div>
+
+        <div class="card">
+            <h3>Completed</h3>
+            <div class="value" id="completed">—</div>
+        </div>
+    </div>
+
+    <section class="investigation">
+        <h2>Recent Investigations</h2>
+        <div id="investigations" class="loading">
+            Loading investigations...
+        </div>
+    </section>
+</main>
+
+<script>
+    async function loadInvestigations() {
+        const container = document.getElementById("investigations");
+
+        try {
+            const response = await fetch("/api/v1/ops/investigations?limit=100");
+
+            if (!response.ok) {
+                throw new Error("Failed to load investigations");
+            }
+
+            const data = await response.json();
+            const investigations = data.items || data;
+
+            document.getElementById("total").textContent =
+                investigations.length;
+
+            document.getElementById("analyzed").textContent =
+                investigations.filter(i => i.status === "analyzed").length;
+
+            document.getElementById("approved").textContent =
+                investigations.filter(i => i.status === "approved").length;
+
+            document.getElementById("completed").textContent =
+                investigations.filter(i => i.status === "completed").length;
+
+            if (investigations.length === 0) {
+                container.innerHTML =
+                    '<div class="empty">No investigations found.</div>';
+                return;
+            }
+
+            container.innerHTML = investigations.map(investigation => `
+                <div
+                     class="investigation-card"
+                     onclick="window.location.href='/investigations/    ${encodeURIComponent(investigation.id)}'"
+                     style="cursor: pointer;"
+                   >
+                    <div class="row">
+                        <div class="request">
+                            ${escapeHtml(investigation.request)}
+                        </div>
+
+                        <div class="meta">
+                            <span class="badge ${investigation.status}">
+                                ${investigation.status}
+                            </span>
+
+                            <span class="badge ${investigation.severity}">
+                                ${investigation.severity || "unknown"}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="diagnosis">
+                        <strong>Diagnosis:</strong>
+                        ${escapeHtml(
+                            investigation.diagnosis || "No diagnosis available"
+                        )}
+
+                        <br><br>
+
+                        <strong>Confidence:</strong>
+                        ${
+                            investigation.confidence != null
+                                ? (investigation.confidence * 100).toFixed(0) + "%"
+                                : "—"
+                        }
+                    </div>
+                </div>
+            `).join("");
+
+        } catch (error) {
+            container.innerHTML =
+                '<div class="empty">Unable to load investigations.</div>';
+        }
+    }
+
+    function escapeHtml(value) {
+        const div = document.createElement("div");
+        div.textContent = value;
+        return div.innerHTML;
+    }
+
+    loadInvestigations();
+</script>
+```
+
+</body>
+</html>

@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 
 <html lang="en">
@@ -5,208 +6,209 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OpsPilot Investigation</title>
+
     <style>
         * {
             box-sizing: border-box;
         }
 
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            color: #1f2937;
+        }
 
-    body {
-        margin: 0;
-        font-family: Arial, sans-serif;
-        background: #f4f6f8;
-        color: #1f2937;
-    }
+        header {
+            background: #111827;
+            color: white;
+            padding: 22px 32px;
+        }
 
-    header {
-        background: #111827;
-        color: white;
-        padding: 22px 32px;
-    }
+        header h1 {
+            margin: 0 0 6px;
+            font-size: 24px;
+        }
 
-    header h1 {
-        margin: 0 0 6px;
-        font-size: 24px;
-    }
+        header p {
+            margin: 0;
+            color: #9ca3af;
+        }
 
-    header p {
-        margin: 0;
-        color: #9ca3af;
-    }
+        main {
+            max-width: 1100px;
+            margin: 32px auto;
+            padding: 0 20px;
+        }
 
-    main {
-        max-width: 1100px;
-        margin: 32px auto;
-        padding: 0 20px;
-    }
+        .back {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 600;
+        }
 
-    .back {
-        display: inline-block;
-        margin-bottom: 20px;
-        color: #2563eb;
-        text-decoration: none;
-        font-weight: 600;
-    }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
 
-    .card {
-        background: white;
-        border-radius: 12px;
-        padding: 24px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    }
+        .card h2 {
+            margin-top: 0;
+            font-size: 18px;
+        }
 
-    .card h2 {
-        margin-top: 0;
-        font-size: 18px;
-    }
+        .badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
 
-    .badges {
-        display: flex;
-        gap: 8px;
-    }
+        .badge {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
 
-    .badge {
-        display: inline-block;
-        padding: 6px 10px;
-        border-radius: 999px;
-        font-size: 12px;
-        font-weight: bold;
-        text-transform: uppercase;
-    }
+        .status {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
 
-    .status {
-        background: #e0e7ff;
-        color: #3730a3;
-    }
+        .severity-critical {
+            background: #fee2e2;
+            color: #991b1b;
+        }
 
-    .severity-critical {
-        background: #fee2e2;
-        color: #991b1b;
-    }
+        .severity-high {
+            background: #ffedd5;
+            color: #9a3412;
+        }
 
-    .severity-high {
-        background: #ffedd5;
-        color: #9a3412;
-    }
+        .severity-medium {
+            background: #fef3c7;
+            color: #92400e;
+        }
 
-    .severity-medium {
-        background: #fef3c7;
-        color: #92400e;
-    }
+        .severity-low {
+            background: #dcfce7;
+            color: #166534;
+        }
 
-    .severity-low {
-        background: #dcfce7;
-        color: #166534;
-    }
+        .request {
+            font-size: 18px;
+            line-height: 1.5;
+        }
 
-    .request {
-        font-size: 18px;
-        line-height: 1.5;
-    }
+        .diagnosis {
+            font-size: 17px;
+            line-height: 1.6;
+        }
 
-    .diagnosis {
-        font-size: 17px;
-        line-height: 1.6;
-    }
+        .confidence {
+            font-weight: bold;
+            margin-top: 12px;
+        }
 
-    .confidence {
-        font-weight: bold;
-        margin-top: 12px;
-    }
+        ul {
+            padding-left: 22px;
+        }
 
-    ul {
-        padding-left: 22px;
-    }
+        li {
+            margin-bottom: 10px;
+        }
 
-    li {
-        margin-bottom: 10px;
-    }
+        .action {
+            background: #f9fafb;
+            border-left: 4px solid #2563eb;
+            padding: 15px;
+            line-height: 1.5;
+        }
 
-    .action {
-        background: #f9fafb;
-        border-left: 4px solid #2563eb;
-        padding: 15px;
-        line-height: 1.5;
-    }
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 16px;
+            border-radius: 8px;
+        }
 
-    .error {
-        background: #fee2e2;
-        color: #991b1b;
-        padding: 16px;
-        border-radius: 8px;
-    }
+        .loading {
+            color: #6b7280;
+        }
 
-    .loading {
-        color: #6b7280;
-    }
+        .audit-timeline {
+            position: relative;
+            margin-top: 10px;
+            padding-left: 28px;
+        }
 
-    .audit-timeline {
-    position: relative;
-    margin-top: 10px;
-    padding-left: 28px;
-}
+        .audit-timeline::before {
+            content: "";
+            position: absolute;
+            left: 7px;
+            top: 8px;
+            bottom: 8px;
+            width: 2px;
+            background: #e5e7eb;
+        }
 
-.audit-timeline::before {
-    content: "";
-    position: absolute;
-    left: 7px;
-    top: 8px;
-    bottom: 8px;
-    width: 2px;
-    background: #e5e7eb;
-}
+        .audit-event {
+            position: relative;
+            margin-bottom: 22px;
+        }
 
-.audit-event {
-    position: relative;
-    margin-bottom: 22px;
-}
+        .audit-event:last-child {
+            margin-bottom: 0;
+        }
 
-.audit-event:last-child {
-    margin-bottom: 0;
-}
+        .audit-event::before {
+            content: "";
+            position: absolute;
+            left: -27px;
+            top: 5px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #2563eb;
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px #2563eb;
+        }
 
-.audit-event::before {
-    content: "";
-    position: absolute;
-    left: -27px;
-    top: 5px;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: #2563eb;
-    border: 3px solid white;
-    box-shadow: 0 0 0 2px #2563eb;
-}
+        .audit-event-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
 
-.audit-event-title {
-    font-weight: bold;
-    margin-bottom: 5px;
-}
+        .audit-transition {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
 
-.audit-transition {
-    color: #6b7280;
-    font-size: 14px;
-    margin-bottom: 6px;
-}
+        .audit-message {
+            line-height: 1.5;
+            margin-bottom: 5px;
+        }
 
-.audit-message {
-    line-height: 1.5;
-    margin-bottom: 5px;
-}
+        .audit-time {
+            color: #9ca3af;
+            font-size: 12px;
+        }
 
-.audit-time {
-    color: #9ca3af;
-    font-size: 12px;
-}
-
-    code {
-        background: #f3f4f6;
-        padding: 2px 5px;
-        border-radius: 4px;
-    }
-</style>
-
+        code {
+            background: #f3f4f6;
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+    </style>
 </head>
 
 <body>
@@ -215,204 +217,279 @@
         <p>Investigation details and operational evidence</p>
     </header>
 
-<main>
-    <a class="back" href="/">← Back to dashboard</a>
+    <main>
+        <a class="back" href="/">← Back to dashboard</a>
 
-    <div id="content" class="loading">
-        Loading investigation...
-    </div>
-</main>
+        <div id="content" class="loading">
+            Loading investigation...
+        </div>
+    </main>
 
-<script>
-    const investigationId = "{{ investigation_id }}";
-    const content = document.getElementById("content");
+    <script>
+        const investigationId = "{{ investigation_id }}";
+        const content = document.getElementById("content");
 
-    function escapeHtml(value) {
-        if (value === null || value === undefined) return "";
+        function escapeHtml(value) {
+            if (value === null || value === undefined) return "";
 
-        return String(value)
-            .replaceAll("&", "&amp;")
-            .replaceAll("<", "&lt;")
-            .replaceAll(">", "&gt;")
-            .replaceAll('"', "&quot;")
-            .replaceAll("'", "&#039;");
-    }
-
-    function severityClass(severity) {
-        if (!severity) return "";
-        return `severity-${severity.toLowerCase()}`;
-    }
-
-    async function loadInvestigation() {
-        try {
-            const response = await fetch(
-                `/api/v1/ops/investigations/${encodeURIComponent(investigationId)}`
-            );
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-
-            const investigation = await response.json();
-            const evidence = investigation.evidence || [];
-
-            content.innerHTML = `
-                <div class="card">
-                    <h2>Investigation</h2>
-
-                    <div class="badges">
-                        <span class="badge status">
-                            ${escapeHtml(investigation.status)}
-                        </span>
-
-                        ${
-                            investigation.severity
-                                ? `<span class="badge ${severityClass(investigation.severity)}">
-                                    ${escapeHtml(investigation.severity)}
-                                   </span>`
-                                : ""
-                        }
-                    </div>
-
-                    <p class="request">
-                        ${escapeHtml(investigation.request)}
-                    </p>
-
-                    <p>
-                        <strong>Investigation ID:</strong>
-                        <code>${escapeHtml(investigation.id)}</code>
-                    </p>
-                </div>
-
-                <div class="card">
-                    <h2>Diagnosis</h2>
-
-                    <p class="diagnosis">
-                        ${
-                            investigation.diagnosis
-                                ? escapeHtml(investigation.diagnosis)
-                                : "No diagnosis available"
-                        }
-                    </p>
-
-                    <p class="confidence">
-                        Confidence:
-                        ${
-                            investigation.confidence !== null &&
-                            investigation.confidence !== undefined
-                                ? `${Math.round(investigation.confidence * 100)}%`
-                                : "—"
-                        }
-                    </p>
-                </div>
-
-                <div class="card">
-                    <h2>Evidence</h2>
-
-                    ${
-                        evidence.length
-                            ? `<ul>
-                                ${evidence.map(item =>
-                                    `<li>${escapeHtml(item)}</li>`
-                                ).join("")}
-                               </ul>`
-                            : "<p>No evidence recorded.</p>"
-                    }
-                </div>
-
-                <div class="card">
-                    <h2>Recommended Action</h2>
-
-                    <div class="action">
-                        ${
-                            investigation.recommended_action
-                                ? escapeHtml(investigation.recommended_action)
-                                : "No recommended action available."
-                        }
-                    </div>
-
-                    <p>
-                        <strong>Human approval required:</strong>
-                        ${investigation.requires_human_approval ? "Yes" : "No"}
-                    </p>
-                </div>
-
-                <div class="card">
-                    <h2>Audit Trail</h2>
-
-                    <div id="events" class="loading">
-                        Loading audit events...
-                    </div>
-                </div>
-            `;
-
-            const eventsResponse = await fetch(
-                `/api/v1/ops/investigations/${encodeURIComponent(investigationId)}/events`
-            );
-
-            if (!eventsResponse.ok) {
-                throw new Error(`Events HTTP ${eventsResponse.status}`);
-            }
-
-            const events = await eventsResponse.json();
-            const eventsContainer = document.getElementById("events");
-
-            if (!events.length) {
-                eventsContainer.innerHTML =
-                    "<p>No audit events recorded.</p>";
-            } else {
-                eventsContainer.innerHTML = `
-    <div class="audit-timeline">
-        ${events.map(event => `
-            <div class="audit-event">
-                <div class="audit-event-title">
-                    ${escapeHtml(event.event_type)}
-                </div>
-
-                ${
-                    event.from_status || event.to_status
-                        ? `
-                            <div class="audit-transition">
-                                ${escapeHtml(event.from_status || "start")}
-                                →
-                                ${escapeHtml(event.to_status || "—")}
-                            </div>
-                        `
-                        : ""
-                }
-
-                ${
-                    event.message
-                        ? `
-                            <div class="audit-message">
-                                ${escapeHtml(event.message)}
-                            </div>
-                        `
-                        : ""
-                }
-
-                <div class="audit-time">
-                    ${escapeHtml(event.created_at || "")}
-                </div>
-            </div>
-        `).join("")}
-    </div>
-`;
-            }
-
-        } catch (error) {
-            console.error(error);
-
-            content.innerHTML = `
-                <div class="error">
-                    Unable to load investigation.
-                </div>
-            `;
+            return String(value)
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
         }
-    }
 
-    loadInvestigation();
-</script>
+        function severityClass(severity) {
+            if (!severity) return "";
+            return `severity-${severity.toLowerCase()}`;
+        }
 
+        async function loadInvestigation() {
+            try {
+                /*
+                 * 1. Load the investigation first.
+                 */
+                const response = await fetch(
+                    `/api/v1/ops/investigations/${encodeURIComponent(investigationId)}`
+                );
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const investigation = await response.json();
+                const evidence = investigation.evidence || [];
+
+                /*
+                 * 2. Render the investigation page.
+                 *
+                 * This creates the #actions and #events elements
+                 * before we try to populate them.
+                 */
+                content.innerHTML = `
+                    <div class="card">
+                        <h2>Investigation</h2>
+
+                        <div class="badges">
+                            <span class="badge status">
+                                ${escapeHtml(investigation.status)}
+                            </span>
+
+                            ${
+                                investigation.severity
+                                    ? `<span class="badge ${severityClass(investigation.severity)}">
+                                        ${escapeHtml(investigation.severity)}
+                                       </span>`
+                                    : ""
+                            }
+                        </div>
+
+                        <p class="request">
+                            ${escapeHtml(investigation.request)}
+                        </p>
+
+                        <p>
+                            <strong>Investigation ID:</strong>
+                            <code>${escapeHtml(investigation.id)}</code>
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <h2>Diagnosis</h2>
+
+                        <p class="diagnosis">
+                            ${
+                                investigation.diagnosis
+                                    ? escapeHtml(investigation.diagnosis)
+                                    : "No diagnosis available"
+                            }
+                        </p>
+
+                        <p class="confidence">
+                            Confidence:
+                            ${
+                                investigation.confidence !== null &&
+                                investigation.confidence !== undefined
+                                    ? `${Math.round(investigation.confidence * 100)}%`
+                                    : "—"
+                            }
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <h2>Evidence</h2>
+
+                        ${
+                            evidence.length
+                                ? `<ul>
+                                    ${evidence.map(item =>
+                                        `<li>${escapeHtml(item)}</li>`
+                                    ).join("")}
+                                   </ul>`
+                                : "<p>No evidence recorded.</p>"
+                        }
+                    </div>
+
+                    <div class="card">
+                        <h2>Recommended Action</h2>
+
+                        <div class="action">
+                            ${
+                                investigation.recommended_action
+                                    ? escapeHtml(investigation.recommended_action)
+                                    : "No recommended action available."
+                            }
+                        </div>
+
+                        <p>
+                            <strong>Human approval required:</strong>
+                            ${investigation.requires_human_approval ? "Yes" : "No"}
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <h2>Remediation Actions</h2>
+
+                        <div id="actions" class="loading">
+                            Loading remediation actions...
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2>Audit Trail</h2>
+
+                        <div id="events" class="loading">
+                            Loading audit events...
+                        </div>
+                    </div>
+                `;
+
+                /*
+                 * 3. Load remediation actions.
+                 */
+                const actionsResponse = await fetch(
+                    `/api/v1/ops/investigations/${encodeURIComponent(investigationId)}/actions`
+                );
+
+                if (!actionsResponse.ok) {
+                    throw new Error(`Actions HTTP ${actionsResponse.status}`);
+                }
+
+                const actionsData = await actionsResponse.json();
+                const actions = actionsData.value ?? actionsData;
+                const actionsContainer = document.getElementById("actions");
+
+                if (!actions.length) {
+                    actionsContainer.innerHTML =
+                        "<p>No remediation actions recorded.</p>";
+                } else {
+                    actionsContainer.innerHTML = `
+                        <div class="audit-timeline">
+                            ${actions.map(action => `
+                                <div class="audit-event">
+                                    <div class="audit-event-title">
+                                        ${escapeHtml(action.action_type)}
+                                    </div>
+
+                                    <div class="audit-transition">
+                                        Status: ${escapeHtml(action.status)}
+                                    </div>
+
+                                    <div class="audit-message">
+                                        ${escapeHtml(action.description)}
+                                    </div>
+
+                                    ${
+                                        action.result
+                                            ? `
+                                                <div class="audit-message">
+                                                    <strong>Result:</strong>
+                                                    ${escapeHtml(action.result)}
+                                                </div>
+                                            `
+                                            : ""
+                                    }
+
+                                    <div class="audit-time">
+                                        ${escapeHtml(action.created_at || "")}
+                                    </div>
+                                </div>
+                            `).join("")}
+                        </div>
+                    `;
+                }
+
+                /*
+                 * 4. Load audit events.
+                 */
+                const eventsResponse = await fetch(
+                    `/api/v1/ops/investigations/${encodeURIComponent(investigationId)}/events`
+                );
+
+                if (!eventsResponse.ok) {
+                    throw new Error(`Events HTTP ${eventsResponse.status}`);
+                }
+
+                const eventsData = await eventsResponse.json();
+                const events = eventsData.value ?? eventsData;
+                const eventsContainer = document.getElementById("events");
+
+                if (!events.length) {
+                    eventsContainer.innerHTML =
+                        "<p>No audit events recorded.</p>";
+                } else {
+                    eventsContainer.innerHTML = `
+                        <div class="audit-timeline">
+                            ${events.map(event => `
+                                <div class="audit-event">
+                                    <div class="audit-event-title">
+                                        ${escapeHtml(event.event_type)}
+                                    </div>
+
+                                    ${
+                                        event.from_status || event.to_status
+                                            ? `
+                                                <div class="audit-transition">
+                                                    ${escapeHtml(event.from_status || "start")}
+                                                    →
+                                                    ${escapeHtml(event.to_status || "—")}
+                                                </div>
+                                            `
+                                            : ""
+                                    }
+
+                                    ${
+                                        event.message
+                                            ? `
+                                                <div class="audit-message">
+                                                    ${escapeHtml(event.message)}
+                                                </div>
+                                            `
+                                            : ""
+                                    }
+
+                                    <div class="audit-time">
+                                        ${escapeHtml(event.created_at || "")}
+                                    </div>
+                                </div>
+                            `).join("")}
+                        </div>
+                    `;
+                }
+
+            } catch (error) {
+                console.error(error);
+
+                content.innerHTML = `
+                    <div class="error">
+                        Unable to load investigation.
+                    </div>
+                `;
+            }
+        }
+
+        loadInvestigation();
+    </script>
 </body>
 </html>

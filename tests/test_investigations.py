@@ -238,3 +238,110 @@ def test_create_investigation_returns_503_when_evidence_collection_fails():
     assert response.json()["detail"] == (
         "Operational evidence is temporarily unavailable"
     )
+
+
+@patch("app.main.diagnose_with_ai", side_effect=mock_gemini_diagnosis)
+def test_cannot_approve_investigation_twice(mock_gemini):
+    response = client.post(
+        "/api/v1/ops/investigations",
+        json={
+            "request": "Database connection pool is exhausted and requests are timing out"
+        },
+    )
+
+    investigation_id = response.json()["id"]
+
+    first_approval = client.post(
+        f"/api/v1/ops/investigations/{investigation_id}/approve"
+    )
+
+    assert first_approval.status_code == 200
+    assert first_approval.json()["status"] == "approved"
+
+    second_approval = client.post(
+        f"/api/v1/ops/investigations/{investigation_id}/approve"
+    )
+
+    assert second_approval.status_code == 400
+
+@patch("app.main.diagnose_with_ai", side_effect=mock_gemini_diagnosis)
+def test_cannot_execute_action_without_approval(mock_gemini):
+    response = client.post(
+        "/api/v1/ops/investigations",
+        json={
+            "request": "Database connection pool is exhausted and requests are timing out"
+        },
+    )
+
+    investigation_id = response.json()["id"]
+
+    approve_investigation = client.post(
+        f"/api/v1/ops/investigations/{investigation_id}/approve"
+    )
+
+    assert approve_investigation.status_code == 200
+
+    action_response = client.post(
+        f"/api/v1/ops/investigations/{investigation_id}/actions"
+    )
+
+    assert action_response.status_code == 200
+
+    action_id = action_response.json()["id"]
+
+    execute_response = client.post(
+        f"/api/v1/ops/investigations/{investigation_id}/actions/{action_id}/execute"
+    )
+
+    assert execute_response.status_code == 400
+
+@patch("app.main.diagnose_with_ai", side_effect=mock_gemini_diagnosis)
+def test_cannot_verify_action_before_execution(mock_gemini):
+    response = client.post(
+        "/api/v1/ops/investigations",
+        json={
+            "request": "Database connection pool is exhausted and requests are timing out"
+        },
+    )
+
+    investigation_id = response.json()["id"]
+
+    approve_investigation = client.post(
+        f"/api/v1/ops/investigations/{investigation_id}/approve"
+    )
+
+    assert approve_investigation.status_code == 200
+
+    action_response = client.post(
+        f"/api/v1/ops/investigations/{investigation_id}/actions"
+    )
+
+    assert action_response.status_code == 200
+
+    action_id = action_response.json()["id"]
+
+    approve_action = client.post(
+        f"/api/v1/ops/investigations/{investigation_id}/actions/{action_id}/approve"
+    )
+
+    assert approve_action.status_code == 200
+
+    verify_response = client.post(
+        f"/api/v1/ops/investigations/{investigation_id}/actions/{action_id}/verify"
+    )
+
+    assert verify_response.status_code == 400
+
+def test_get_investigation_returns_404_for_unknown_id():
+    response = client.get(
+        "/api/v1/ops/investigations/does-not-exist"
+    )
+
+    assert response.status_code == 404
+
+def test_list_actions_returns_404_for_unknown_investigation():
+    response = client.get(
+        "/api/v1/ops/investigations/does-not-exist/actions"
+    )
+
+    assert response.status_code == 404

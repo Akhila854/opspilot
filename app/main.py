@@ -1,3 +1,12 @@
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+)
+
+logger = logging.getLogger("opspilot")
+
 from datetime import datetime
 from uuid import uuid4
 
@@ -99,7 +108,10 @@ def create_investigation(
     try:
         evidence = collect_evidence(**classification)
     except Exception as exc:
-        print(f"Evidence collection failed: {exc}")
+        logger.exception(
+            "Evidence collection failed",
+            extra={"request": payload.request},
+        )
         raise HTTPException(
              status_code=503,
             detail="Operational evidence is temporarily unavailable",
@@ -110,7 +122,13 @@ def create_investigation(
         diagnosis = diagnose_with_ai(evidence)
         reasoning_provider = "gemini"
     except Exception as exc:
-        print(f"Gemini reasoning unavailable, using deterministic fallback: {exc}")
+        logger.warning(
+            "Gemini reasoning unavailable; using deterministic fallback",
+            extra={
+                "request": payload.request,
+                "error": str(exc),
+            },
+        )
         diagnosis = diagnose(evidence)
         reasoning_provider = "deterministic_fallback"
 
@@ -133,6 +151,15 @@ def create_investigation(
         from_status=None,
         to_status="analyzed",
         message=f"Investigation created and initial diagnosis completed using {reasoning_provider}",
+    )
+
+    logger.info(
+        "Investigation created",
+        extra={
+            "investigation_id": investigation.id,
+            "status": investigation.status,
+            "severity": investigation.severity,
+        },
     )
 
     # Step 6: Return the complete investigation.
@@ -264,6 +291,14 @@ def approve_investigation(
         message="Investigation approved",
     )
 
+    logger.info(
+        "Investigation approved",
+        extra={
+            "investigation_id": investigation.id,
+            "status": investigation.status,
+        },
+    )
+
     return Investigation(
         id=investigation.id,
         request=investigation.request,
@@ -377,6 +412,16 @@ def create_action(
         message=f"Action created: {action.description}",
     )
 
+    logger.info(
+        "Remediation action created",
+        extra={
+            "investigation_id": investigation.id,
+            "action_id": action.id,
+            "action_type": action.action_type,
+            "status": action.status,
+        },
+    )
+
     return InvestigationAction(
         id=action.id,
         investigation_id=action.investigation_id,
@@ -443,6 +488,15 @@ def approve_action(
         from_status="proposed",
         to_status="approved",
         message=f"Action approved: {action.description}",
+    )
+
+    logger.info(
+        "Remediation action approved",
+        extra={
+            "investigation_id": investigation.id,
+            "action_id": action.id,
+            "status": action.status,
+        },
     )
 
     return InvestigationAction(
@@ -534,6 +588,16 @@ def execute_action(
     to_status="executed",
     message=f"Action executed: {action.description}",
 )
+    logger.info(
+        "Remediation action executed",
+        extra={
+            "investigation_id": investigation.id,
+            "action_id": action.id,
+            "action_type": action.action_type,
+            "status": action.status,
+        },
+    )
+
     return InvestigationAction(
         id=action.id,
         investigation_id=action.investigation_id,
@@ -714,6 +778,25 @@ def verify_action(
 
     db.commit()
 
+    if recovered:
+        logger.info(
+            "Remediation action verified successfully",
+            extra={
+                "investigation_id": investigation.id,
+                "action_id": action.id,
+                "investigation_status": investigation.status,
+            },
+        )
+    else:
+        logger.warning(
+            "Remediation action verification failed",
+            extra={
+                "investigation_id": investigation.id,
+                "action_id": action.id,
+                "investigation_status": investigation.status,
+            },
+        )
+
     return {
         "investigation_id": investigation.id,
         "action_id": action.id,
@@ -722,4 +805,3 @@ def verify_action(
         "metrics": metrics,
         "message": message,
     }
-

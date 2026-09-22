@@ -374,6 +374,27 @@ healthy
 
 ---
 
+## API Documentation
+
+OpsPilot exposes interactive OpenAPI documentation through FastAPI.
+
+Start the application:
+
+`powershell
+uvicorn app.main:app --reload
+`
+
+Then open http://127.0.0.1:8000/docs.
+
+The API is organized into four areas:
+
+- **System** — health checks
+- **Investigations** — investigation creation, diagnosis, approval, and completion
+- **Remediation** — controlled action creation, approval, execution, and verification
+- **Audit** — persisted investigation lifecycle events
+
+The complete workflow is documented in [docs/api-workflow.md](docs/api-workflow.md).
+
 ## Testing
 
 Run the complete test suite:

@@ -30,10 +30,33 @@ from app.tools.metrics import get_metrics, simulate_remediation
 
 
 
+openapi_tags = [
+    {
+        "name": "System",
+        "description": "Health and system-level endpoints.",
+    },
+    {
+        "name": "Investigations",
+        "description": "Create, inspect, approve, and complete incident investigations.",
+    },
+    {
+        "name": "Remediation",
+        "description": "Create, approve, execute, and verify controlled remediation actions.",
+    },
+    {
+        "name": "Audit",
+        "description": "Inspect persisted investigation and remediation lifecycle events.",
+    },
+]
+
 app = FastAPI(
     title="OpsPilot",
-    description="AI-powered operations copilot",
+    description=(
+        "AI-powered operations copilot for evidence-based incident investigation, "
+        "human-approved remediation, verification, and auditability."
+    ),
     version="0.1.0",
+    openapi_tags=openapi_tags,
 )
 
 Base.metadata.create_all(bind=engine)
@@ -78,7 +101,12 @@ def record_investigation_event(
     db.commit()
 
 
-@app.get("/health")
+@app.get(
+    "/health",
+    tags=["System"],
+    summary="Check API health",
+    description="Returns a lightweight health response for service availability checks.",
+)
 def health_check():
     return {"status": "healthy"}
 
@@ -86,6 +114,12 @@ def health_check():
 @app.post(
     "/api/v1/ops/investigations",
     response_model=Investigation,
+    tags=["Investigations"],
+    summary="Create and analyze an investigation",
+    description=(
+        "Creates an investigation, classifies the request, collects operational "
+        "evidence, and produces an AI diagnosis with a deterministic fallback."
+    ),
 )
 def create_investigation(
     payload: InvestigationCreate,
@@ -179,6 +213,9 @@ def create_investigation(
 @app.get(
     "/api/v1/ops/investigations/{investigation_id}",
     response_model=Investigation,
+    tags=["Investigations"],
+    summary="Get an investigation",
+    description="Returns the current investigation state, diagnosis, evidence, and recommended action.",
 )
 def get_investigation(
     investigation_id: str,
@@ -208,6 +245,9 @@ def get_investigation(
 @app.get(
     "/api/v1/ops/investigations",
     response_model=list[Investigation],
+    tags=["Investigations"],
+    summary="List investigations",
+    description="Lists investigations with optional status and severity filters plus pagination.",
 )
 def list_investigations(
     status: str | None = None,
@@ -251,6 +291,9 @@ def list_investigations(
 @app.post(
     "/api/v1/ops/investigations/{investigation_id}/approve",
     response_model=Investigation,
+    tags=["Investigations"],
+    summary="Approve an investigation",
+    description="Moves an analyzed investigation into the approved state after human approval.",
 )
 def approve_investigation(
     investigation_id: str,
@@ -315,6 +358,9 @@ def approve_investigation(
 @app.post(
     "/api/v1/ops/investigations/{investigation_id}/complete",
     response_model=Investigation,
+    tags=["Investigations"],
+    summary="Complete an investigation",
+    description="Completes an approved investigation without executing a remediation action.",
 )
 def complete_investigation(
     investigation_id: str,
@@ -365,6 +411,9 @@ def complete_investigation(
 @app.post(
     "/api/v1/ops/investigations/{investigation_id}/actions",
     response_model=InvestigationAction,
+    tags=["Remediation"],
+    summary="Create a remediation action",
+    description="Creates the recommended remediation action in the proposed state.",
 )
 def create_action(
     investigation_id: str,
@@ -445,6 +494,9 @@ def create_action(
 @app.post(
     "/api/v1/ops/investigations/{investigation_id}/actions/{action_id}/approve",
     response_model=InvestigationAction,
+    tags=["Remediation"],
+    summary="Approve a remediation action",
+    description="Moves a proposed remediation action into the approved state.",
 )
 def approve_action(
     investigation_id: str,
@@ -523,6 +575,9 @@ def approve_action(
 @app.post(
     "/api/v1/ops/investigations/{investigation_id}/actions/{action_id}/execute",
     response_model=InvestigationAction,
+    tags=["Remediation"],
+    summary="Execute a remediation action",
+    description="Executes an approved remediation action using the simulated remediation tool.",
 )
 def execute_action(
     investigation_id: str,
@@ -622,6 +677,9 @@ def execute_action(
 @app.get(
     "/api/v1/ops/investigations/{investigation_id}/actions",
     response_model=list[InvestigationAction],
+    tags=["Remediation"],
+    summary="List remediation actions",
+    description="Returns all remediation actions associated with an investigation.",
 )
 def list_actions(
     investigation_id: str,
@@ -670,6 +728,9 @@ def list_actions(
 
 @app.get(
     "/api/v1/ops/investigations/{investigation_id}/events",
+    tags=["Audit"],
+    summary="List investigation audit events",
+    description="Returns the persisted lifecycle events for an investigation.",
 )
 def list_investigation_events(
     investigation_id: str,
@@ -710,7 +771,15 @@ def list_investigation_events(
     ]
 
 
-@app.post("/api/v1/ops/investigations/{investigation_id}/actions/{action_id}/verify")
+@app.post(
+    "/api/v1/ops/investigations/{investigation_id}/actions/{action_id}/verify",
+    tags=["Remediation"],
+    summary="Verify a remediation action",
+    description=(
+        "Checks post-remediation operational metrics and marks the investigation "
+        "completed when the simulated recovery criteria are satisfied."
+    ),
+)
 def verify_action(
     investigation_id: str,
     action_id: str,

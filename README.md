@@ -1,517 +1,559 @@
 # OpsPilot
 
-**AI-powered operations copilot for incident investigation, diagnosis, human-approved remediation, verification, and auditability.**
+AI-powered operations copilot for evidence-based incident investigation, human-approved remediation, verification, and auditability.
 
-OpsPilot is a FastAPI backend that turns an operational incident request into a structured, evidence-based investigation and controlled remediation workflow.
-
-The project demonstrates how AI can assist with operational diagnosis while keeping **human approval, execution controls, persistence, and auditability** in the loop.
-
----
-
-## What OpsPilot Does
-
-Given an incident such as:
+OpsPilot turns an operational incident request into a structured investigation workflow:
 
 ```text
-Payment API is timing out because the database connection pool is exhausted
-```
+Incident Request
+      ↓
+Classification
+      ↓
+Operational Evidence
+      ↓
+AI Diagnosis
+      ↓
+Human Approval
+      ↓
+Remediation Proposal
+      ↓
+Human Approval
+      ↓
+Remediation Execution
+      ↓
+Verification
+      ↓
+Completed / Failed
+      ↓
+Persisted Audit Trail
 
-OpsPilot:
+The project is designed around an important operational principle:
 
-1. Classifies the incident
-2. Collects operational evidence
-3. Analyzes the evidence
-4. Produces a diagnosis, severity, and confidence score
-5. Recommends a remediation
-6. Requires human approval
-7. Creates a controlled remediation action
-8. Requires approval for the action
-9. Executes the remediation
-10. Verifies whether the system recovered
-11. Marks the investigation completed or failed
-12. Records the lifecycle in an audit trail
+AI can investigate and recommend actions, but remediation requires explicit human approval and every lifecycle transition is persisted for auditability.
 
-The core principle is:
+Why OpsPilot?
 
-> **AI can recommend operational actions, but execution remains controlled, verifiable, and auditable.**
+Operational incidents often require engineers to combine several activities:
 
----
+understand the incident request
+classify the problem
+collect relevant operational signals
+determine a likely diagnosis
+recommend a remediation
+obtain approval before changing anything
+execute the remediation
+verify whether the system recovered
+preserve an audit trail
 
-## Architecture
+OpsPilot demonstrates how these steps can be implemented as a backend workflow rather than treating an AI model as an unrestricted autonomous agent.
 
-```text
-                         ┌──────────────────┐
-                         │      Client      │
-                         └────────┬─────────┘
-                                  │
-                                  ▼
-                         ┌──────────────────┐
-                         │     FastAPI      │
-                         └────────┬─────────┘
-                                  │
-                                  ▼
-                         ┌──────────────────┐
-                         │   Classification │
-                         └────────┬─────────┘
-                                  │
-                                  ▼
-                         ┌──────────────────┐
-                         │ Evidence         │
-                         │ Collection       │
-                         └────────┬─────────┘
-                                  │
-                                  ▼
-                         ┌──────────────────┐
-                         │ AI / Deterministic│
-                         │ Diagnosis Engine  │
-                         └────────┬─────────┘
-                                  │
-                                  ▼
-                         ┌──────────────────┐
-                         │ Recommended      │
-                         │ Remediation      │
-                         └────────┬─────────┘
-                                  │
-                                  ▼
-                         ┌──────────────────┐
-                         │ Human Approval   │
-                         └────────┬─────────┘
-                                  │
-                                  ▼
-                         ┌──────────────────┐
-                         │ Action Approval  │
-                         └────────┬─────────┘
-                                  │
-                                  ▼
-                         ┌──────────────────┐
-                         │ Remediation      │
-                         │ Execution        │
-                         └────────┬─────────┘
-                                  │
-                                  ▼
-                         ┌──────────────────┐
-                         │ Recovery         │
-                         │ Verification     │
-                         └────────┬─────────┘
-                                  │
-                         ┌────────┴────────┐
-                         ▼                 ▼
-                    ┌──────────┐      ┌──────────┐
-                    │Completed │      │  Failed  │
-                    └──────────┘      └──────────┘
-                         │                 │
-                         └────────┬────────┘
-                                  ▼
-                         ┌──────────────────┐
-                         │ Audit Trail      │
-                         │ + SQLite         │
-                         └──────────────────┘
-```
+Key Features
+Evidence-based investigation
 
----
+An incoming incident request is classified and operational evidence is collected before diagnosis.
 
-## Investigation Lifecycle
+Example evidence:
 
-```text
-created
-   │
-   ▼
-analyzed
-   │
-   ▼
-human approval
-   │
-   ▼
-approved
-   │
-   ▼
-action proposed
-   │
-   ▼
-action approved
-   │
-   ▼
-action executed
-   │
-   ▼
-verification
-   │
-   ├──────────────► completed
-   │
-   └──────────────► failed
-```
+API latency is 2400 ms
+Error rate is 34.0%
 
-This separates **diagnosis**, **authorization**, **execution**, and **verification** rather than treating an AI recommendation as an automatic operational change.
+The diagnosis is generated from the collected operational context.
 
----
+AI diagnosis with deterministic fallback
 
-## Example Investigation
+OpsPilot integrates Gemini for incident reasoning.
 
-### Request
+If the external AI reasoning service is unavailable, the application falls back to deterministic reasoning logic.
 
-```text
-Payment API is timing out because the database connection pool is exhausted
-```
+This provides a predictable development and testing path without making the application completely dependent on an external AI service.
 
-### Diagnosis
+Conceptually:
 
-```text
-Severity: critical
-Diagnosis: Database connection pool exhaustion
-Confidence: 0.94
-Human approval required: true
-```
+Operational Evidence
+        ↓
+   Gemini Reasoning
+        │
+        ├── success → AI diagnosis
+        │
+        └── failure → deterministic fallback
+Human approval gates
 
-### Evidence
+OpsPilot does not automatically execute remediation after diagnosis.
 
-```text
-Database connections: 100/100
-Database timeout logs: detected
-Error rate: 34.0%
-Latency: 2400 ms
-```
+The investigation must first move through an approval step:
 
-### Recommended Remediation
+analyzed → approved
 
-```text
-Investigate connection leaks and verify PostgreSQL health
-```
+A remediation action also requires approval:
 
-### Post-Remediation Verification
+proposed → approved
 
-After the simulated remediation:
+This creates an explicit human-in-the-loop control point before operational actions are executed.
 
-```text
-Database connections: 42/100
-Error rate: 2.0%
-Latency: 180 ms
-Recovered: true
-Status: completed
-```
+Remediation execution
 
-This means the system does not stop at:
+Approved remediation actions can be executed through the API.
 
-> "I think I fixed it."
+The current implementation simulates an operational remediation and produces post-remediation metrics such as:
 
-It verifies the operational state after execution.
+{
+  "error_rate": 1.5,
+  "latency_ms": 180,
+  "requests_per_minute": 1250,
+  "database_connections": 100,
+  "database_connection_limit": 100
+}
+Remediation verification
 
----
+Execution is not considered successful simply because the action ran.
 
-## AI Reasoning
+OpsPilot evaluates post-remediation metrics and records whether recovery was detected.
 
-OpsPilot supports Gemini-based incident reasoning while retaining a deterministic diagnosis path as a fallback.
+Example:
 
-The reasoning pipeline is designed around supplied operational evidence rather than allowing the model to invent infrastructure facts.
+{
+  "status": "completed",
+  "recovered": true,
+  "message": "Remediation verified successfully"
+}
+Persistent audit trail
 
-The AI diagnosis produces structured information including:
+Investigation and remediation lifecycle events are persisted.
 
-* Diagnosis
-* Severity
-* Confidence
-* Evidence
-* Recommended action
-* Human approval requirement
+For example:
 
-If AI reasoning is unavailable, OpsPilot can fall back to deterministic diagnosis logic.
+investigation_created
+        ↓
+investigation_approved
+        ↓
+action_created
+        ↓
+action_approved
+        ↓
+action_executed
+        ↓
+action_verified
 
----
+Each event records information such as:
 
-## Controlled Remediation
+event ID
+investigation ID
+event type
+previous status
+new status
+event message
+timestamp
 
-Remediation actions follow their own approval lifecycle:
+This makes the complete operational workflow inspectable after execution.
 
-```text
+Architecture
+                    ┌─────────────────────┐
+                    │     FastAPI API     │
+                    └──────────┬──────────┘
+                               │
+              ┌────────────────┼────────────────┐
+              │                │                │
+              ▼                ▼                ▼
+       Investigations     Remediation        Audit
+              │                │                │
+              ▼                ▼                ▼
+       Classification      Approval         Event Store
+              │
+              ▼
+       Evidence Collection
+              │
+              ▼
+       Reasoning Engine
+          │         │
+          │         └──────────────┐
+          ▼                        ▼
+       Gemini              Deterministic
+       Reasoning              Fallback
+          │                        │
+          └──────────┬─────────────┘
+                     ▼
+              Persisted Diagnosis
+                     │
+                     ▼
+               Human Approval
+                     │
+                     ▼
+             Remediation Action
+                     │
+                     ▼
+                  Execute
+                     │
+                     ▼
+                 Verify
+                     │
+                     ▼
+                Completed
+Technology Stack
+Area	Technology
+API	FastAPI
+Language	Python
+Validation	Pydantic
+ORM	SQLAlchemy
+Database	SQLite
+AI reasoning	Gemini
+Server	Uvicorn
+Testing	Pytest
+Containerization	Docker
+Local orchestration	Docker Compose
+CI	GitHub Actions
+API documentation	OpenAPI / Swagger UI
+Frontend	HTML templates
+Project Structure
+opspilot/
+│
+├── app/
+│   ├── database.py
+│   ├── db_models.py
+│   ├── main.py
+│   ├── models.py
+│   │
+│   ├── investigation/
+│   │   └── evidence.py
+│   │
+│   ├── reasoning/
+│   │   ├── ai_engine.py
+│   │   ├── classifier.py
+│   │   ├── engine.py
+│   │   └── schemas.py
+│   │
+│   ├── tools/
+│   │   ├── logs.py
+│   │   ├── metrics.py
+│   │   ├── runbooks.py
+│   │   └── services.py
+│   │
+│   └── templates/
+│       ├── dashboard.html
+│       └── investigation.html
+│
+├── tests/
+│   ├── test_investigations.py
+│   ├── test_openapi.py
+│   └── test_reasoning.py
+│
+├── docs/
+│   ├── architecture.md
+│   └── api-workflow.md
+│
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+│
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+├── requirements-dev.txt
+├── pytest.ini
+├── .env.example
+└── README.md
+API Workflow
+1. Create and analyze an investigation
+POST /api/v1/ops/investigations
+
+Example request:
+
+{
+  "request": "Payment API is returning 500 errors. Payment requests are intermittently failing with 500 errors and users are reporting timeouts."
+}
+
+The API:
+
+creates the investigation
+classifies the request
+collects operational evidence
+analyzes the evidence
+persists the diagnosis
+records an audit event
+2. Approve the investigation
+POST /api/v1/ops/investigations/{investigation_id}/approve
+
+Moves:
+
+analyzed → approved
+
+This represents the human approval gate before remediation can be created.
+
+3. Create a remediation action
+POST /api/v1/ops/investigations/{investigation_id}/actions
+
+Example action:
+
+Investigate slow dependencies and review recent application changes
+
+The action starts as:
+
 proposed
-   │
-   ▼
-approved
-   │
-   ▼
+4. Approve the remediation
+POST /api/v1/ops/investigations/{investigation_id}/actions/{action_id}/approve
+
+Moves:
+
+proposed → approved
+5. Execute the remediation
+POST /api/v1/ops/investigations/{investigation_id}/actions/{action_id}/execute
+
+The action moves to:
+
 executed
-```
 
-Execution is currently simulated so the project can demonstrate the complete operational workflow without making destructive changes to real infrastructure.
+Post-remediation operational metrics are produced.
 
-After execution, OpsPilot evaluates simulated operational metrics to determine whether the incident recovered.
+6. Verify recovery
+POST /api/v1/ops/investigations/{investigation_id}/actions/{action_id}/verify
 
----
+If recovery conditions are satisfied:
 
-## Auditability
+executed → completed
 
-OpsPilot records lifecycle events such as:
+Otherwise the workflow can record a failed verification state.
 
-```text
+7. Inspect the audit trail
+GET /api/v1/ops/investigations/{investigation_id}/events
+
+This returns the persisted lifecycle events for the investigation.
+
+Example End-to-End Investigation
+
+A portfolio demonstration uses a simulated Payment API incident.
+
+Incident
+Payment API is returning 500 errors.
+Payment requests are intermittently failing with 500 errors
+and users are reporting timeouts.
+Diagnosis
+Severity: high
+Diagnosis: High API latency
+Confidence: 0.88
+Evidence
+API latency is 2400 ms
+Error rate is 34.0%
+Recommended remediation
+Investigate slow dependencies and review recent application changes
+Post-remediation metrics
+Error rate: 1.5%
+Latency: 180 ms
+Requests/minute: 1250
+Database connections: 100
+Database connection limit: 100
+Verification
+Status: completed
+Recovered: true
+Audit lifecycle
 investigation_created
 investigation_approved
 action_created
 action_approved
 action_executed
 action_verified
-```
 
-This provides an audit trail showing how an incident moved through diagnosis, approval, remediation, and verification.
+This demonstrates the complete workflow from incident intake through verified recovery.
 
----
+Running Locally
+1. Clone the repository
+git clone https://github.com/Akhila854/opspilot.git
+cd opspilot
+2. Create a virtual environment
 
-## API
+Windows PowerShell:
 
-| Method | Endpoint                                                      | Purpose                   |
-| ------ | ------------------------------------------------------------- | ------------------------- |
-| GET    | `/health`                                                     | Health check              |
-| POST   | `/api/v1/ops/investigations`                                  | Create investigation      |
-| GET    | `/api/v1/ops/investigations`                                  | List investigations       |
-| GET    | `/api/v1/ops/investigations/{id}`                             | Get investigation         |
-| POST   | `/api/v1/ops/investigations/{id}/approve`                     | Approve investigation     |
-| POST   | `/api/v1/ops/investigations/{id}/actions`                     | Create remediation action |
-| POST   | `/api/v1/ops/investigations/{id}/actions/{action_id}/approve` | Approve action            |
-| POST   | `/api/v1/ops/investigations/{id}/actions/{action_id}/execute` | Execute action            |
-| POST   | `/api/v1/ops/investigations/{id}/actions/{action_id}/verify`  | Verify remediation        |
-| GET    | `/api/v1/ops/investigations/{id}/actions`                     | List actions              |
-| GET    | `/api/v1/ops/investigations/{id}/events`                      | View audit trail          |
-| POST   | `/api/v1/ops/investigations/{id}/complete`                    | Complete investigation    |
-
-Interactive API documentation is available through FastAPI:
-
-```text
-http://127.0.0.1:8000/docs
-```
-
----
-
-## Tech Stack
-
-* Python 3.12
-* FastAPI
-* Pydantic
-* SQLAlchemy
-* SQLite
-* Google Gemini
-* Pytest
-* Docker
-* Docker Compose
-* PowerShell
-
----
-
-## Persistence
-
-OpsPilot uses SQLite through SQLAlchemy.
-
-Docker mounts the database into a named volume:
-
-```text
-SQLite
-  │
-  ▼
-/app/data/opspilot.db
-  │
-  ▼
-Docker named volume
-```
-
-This allows investigation data to survive container recreation.
-
-The persistence workflow has been verified by creating an investigation, recreating the Docker container, and retrieving the same investigation afterward.
-
----
-
-## Running Locally
-
-Create and activate the virtual environment:
-
-```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-```
+3. Install dependencies
+python -m pip install -r requirements-dev.txt
+4. Configure environment variables
 
-Install dependencies:
+Copy:
 
-```powershell
-pip install -r requirements.txt
-```
+.env.example
 
-Start the API:
+to:
 
-```powershell
-uvicorn app.main:app --reload
-```
+.env
 
-Open:
+Configure the Gemini credentials if AI reasoning is required.
 
-```text
+Do not commit .env or API keys to Git.
+
+5. Start the API
+python -m uvicorn app.main:app --reload
+
+The application will be available at:
+
+http://127.0.0.1:8000
+
+Swagger documentation:
+
 http://127.0.0.1:8000/docs
-```
-
----
-
-## Running with Docker
-
-Build and start:
-
-```powershell
-docker compose up --build
-```
-
-Check the service:
-
-```powershell
-docker compose ps
-```
-
-Health check:
-
-```powershell
-Invoke-RestMethod http://127.0.0.1:8000/health
-```
-
-Expected:
-
-```text
-status
-------
-healthy
-```
-
----
-
-## API Documentation
-
-OpsPilot exposes interactive OpenAPI documentation through FastAPI.
-
-Start the application:
-
-`powershell
-uvicorn app.main:app --reload
-`
-
-Then open http://127.0.0.1:8000/docs.
-
-The API is organized into four areas:
-
-- **System** — health checks
-- **Investigations** — investigation creation, diagnosis, approval, and completion
-- **Remediation** — controlled action creation, approval, execution, and verification
-- **Audit** — persisted investigation lifecycle events
-
-The complete workflow is documented in [docs/api-workflow.md](docs/api-workflow.md).
-
-## Testing
+Running Tests
 
 Run the complete test suite:
 
-```powershell
 pytest -q
-```
 
-The project includes automated coverage for:
+The project currently has automated coverage for:
 
-* Health checks
-* Investigation creation
-* Classification
-* Evidence collection
-* Deterministic diagnosis
-* AI diagnosis prompt construction
-* Investigation approval
-* Remediation actions
-* Action approval
-* Action execution
-* Audit trails
-* Pagination validation
-* Evidence collection failures
+investigation creation
+investigation state transitions
+pagination validation
+remediation action workflow
+audit events
+reasoning behavior
+API/OpenAPI structure
 
----
+Latest local verification:
 
-## Project Structure
+17 passed
 
-```text
-opspilot/
-│
-├── app/
-│   ├── main.py
-│   ├── models.py
-│   ├── db_models.py
-│   ├── database.py
-│   │
-│   ├── investigation/
-│   │   └── evidence.py
-│   │
-│   ├── reasoning/
-│   │   ├── classifier.py
-│   │   ├── engine.py
-│   │   ├── ai_engine.py
-│   │   └── schemas.py
-│   │
-│   └── tools/
-│       ├── logs.py
-│       ├── metrics.py
-│       ├── services.py
-│       └── runbooks.py
-│
-├── tests/
-│   ├── test_investigations.py
-│   └── test_reasoning.py
-│
-├── Dockerfile
-├── docker-compose.yml
-├── requirements.txt
-├── pytest.ini
-├── .env.example
-└── README.md
-```
+Additional checks:
 
----
+python -m compileall app
+git diff --check
+git status --short
+Docker
 
-## Design Principles
+Build and start OpsPilot with Docker Compose:
 
-### Human-in-the-loop
+docker compose up --build
 
-AI recommendations do not directly trigger operational remediation.
+The API will be available at:
 
-### Evidence-based reasoning
+http://127.0.0.1:8000
 
-Diagnosis is based on collected operational evidence rather than unrestricted model speculation.
+Stop the application:
 
-### Controlled execution
+docker compose down
 
-Remediation requires explicit approval before execution.
+The SQLite database is persisted through the Docker Compose volume.
 
-### Verification
+CI
 
-A remediation is not considered successful merely because execution completed. Operational metrics are checked afterward.
+GitHub Actions runs automated validation on the repository.
 
-### Auditability
+The CI workflow performs checks including:
 
-Investigation and action lifecycle events are persisted for traceability.
+Install dependencies
+        ↓
+Compile application
+        ↓
+Run pytest
+        ↓
+Check git diff
 
-### Safe simulation
+This ensures that changes pushed to the repository are automatically validated.
 
-The remediation layer is simulated, making the project suitable for development and demonstration without modifying real production infrastructure.
+API Documentation
 
----
+OpsPilot exposes an OpenAPI 3.1 specification through FastAPI.
 
-## Future Improvements
+Swagger UI:
 
-Potential next steps include:
+/docs
 
-* PostgreSQL production support
-* Real observability integrations
-* Kubernetes and cloud integrations
-* Authentication and authorization
-* Role-based approval policies
-* Real remediation adapters
-* Background investigation jobs
-* Distributed tracing
-* Metrics and monitoring dashboards
-* Production-grade database migrations
+OpenAPI specification:
 
----
+/openapi.json
 
-## Why OpsPilot?
+The API is organized into:
 
-OpsPilot demonstrates a practical approach to AI-assisted operations:
+System
+Investigations
+Remediation
+Audit
+Design Principles
+Human-in-the-loop
 
-**investigate → reason → approve → remediate → verify → audit**
+AI recommendations do not directly authorize operational changes.
 
-The project focuses not just on generating an AI answer, but on integrating AI into a controlled operational workflow where actions require authorization and outcomes are verified.
+Approval is explicitly represented in the workflow.
 
-> **Automation should increase operational speed without removing human control.**
+Evidence before diagnosis
+
+The reasoning process receives operational evidence rather than relying only on the original incident text.
+
+Deterministic fallback
+
+The application remains usable when external AI reasoning is unavailable.
+
+Verification after execution
+
+Executing an action is separate from determining whether the system recovered.
+
+Persistent auditability
+
+Important state transitions are recorded as durable events.
+
+Explicit state transitions
+
+Investigation and remediation states are validated rather than allowing arbitrary transitions.
+
+What This Project Demonstrates
+
+OpsPilot was built to demonstrate practical backend and AI engineering concepts:
+
+FastAPI API design
+RESTful workflow modeling
+Pydantic validation
+SQLAlchemy persistence
+SQLite database design
+AI integration with Gemini
+deterministic fallback reasoning
+operational evidence collection
+state machines and guarded transitions
+human approval workflows
+remediation execution
+post-action verification
+audit logging
+API pagination and filtering
+automated testing
+OpenAPI documentation
+Docker containerization
+Docker Compose
+GitHub Actions CI
+structured project documentation
+Project Status
+
+The core OpsPilot workflow is implemented and tested.
+
+The current implementation provides an end-to-end demonstration of:
+
+Investigation
+→ Diagnosis
+→ Approval
+→ Remediation
+→ Approval
+→ Execution
+→ Verification
+→ Audit
+
+The remediation layer currently uses simulated operational actions, making the project safe to demonstrate locally while preserving the architecture needed for future integrations with real operational systems.
+
+Future Extensions
+
+Possible future integrations include:
+
+real log platforms
+Prometheus metrics
+Kubernetes health checks
+cloud monitoring APIs
+incident-management systems
+Slack or Microsoft Teams notifications
+production runbook execution
+role-based approval permissions
+richer remediation policies
+
+These are intentionally outside the current core implementation.
+
+Author
+
+Akhila
+
+Backend / AI Engineering Portfolio Project
+
+GitHub:
+
+https://github.com/Akhila854/opspilot
